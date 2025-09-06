@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoFinds - Login</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f5f6f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .login-card {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 360px;
+    }
+    .logo img { width: 50px; height: 50px; }
+    h1 { margin: 10px 0 5px; font-size: 1.8rem; }
+    p.subtitle { color: #666; margin-bottom: 20px; font-size: 0.95rem; }
+    h2 { font-size: 1.2rem; margin-bottom: 20px; font-weight: bold; }
+    input {
+      width: 100%; padding: 12px; margin: 10px 0;
+      border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;
+    }
+    .btn {
+      width: 100%; padding: 12px; margin-top: 10px;
+      border: none; border-radius: 6px; cursor: pointer;
+      font-size: 1rem; transition: 0.3s;
+    }
+    .btn-primary { background-color: #28a745; color: white; }
+    .btn-primary:hover { background-color: #218838; }
+    .btn-google {
+      background: white; border: 1px solid #ccc;
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; margin-top: 15px;
+    }
+    .btn-google img { width: 18px; height: 18px; }
+    .footer { margin-top: 15px; font-size: 0.9rem; }
+    .footer a { color: #28a745; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="logo">
+      <img src="https://img.icons8.com/ios-filled/100/28a745/leaf.png" alt="EcoFinds Logo">
+    </div>
+    <h1>EcoFinds</h1>
+    <p class="subtitle">Sustainable Second-Hand Marketplace</p>
+    <h2>Welcome Back</h2>
+
+    <!-- Login Form -->
+    <form onsubmit="return handleLogin(event)">
+      <input type="email" id="email" placeholder="your@email.com" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit" class="btn btn-primary">Sign In</button>
+    </form>
+
+    <p>or</p>
+
+    <!-- Google Login Button -->
+    <!-- ...existing code... -->
+<!-- Google Login Button -->
+<button class="btn btn-google" onclick="googleLogin()" style="display:none;">
+  <img src="https://img.icons8.com/color/48/google-logo.png" alt="Google Logo">
+  Continue with Google
+</button>
+<!-- ...existing code... -->
+
+    <div class="footer">
+      Don’t have an account? <a href="#" onclick="showSignup()">Sign up</a>
+    </div>
+
+    <!-- Signup Form (hidden initially) -->
+    <div id="signup" style="display:none; margin-top:20px;">
+      <h2>Create Account</h2>
+      <form onsubmit="return handleSignup(event)">
+        <input type="email" id="newEmail" placeholder="Enter Email" required>
+        <input type="password" id="newPassword" placeholder="Enter Password" required>
+        <button type="submit" class="btn btn-primary">Sign Up</button>
+      </form>
+      <p>Already have an account? <a href="#" onclick="showLogin()">Back to Login</a></p>
+    </div>
+  </div>
+
+  <script>
+    function showSignup() {
+      document.querySelector("form").style.display = "none";
+      document.querySelector(".btn-google").style.display = "none";
+      document.querySelector(".footer").style.display = "none";
+      document.getElementById("signup").style.display = "block";
+    }
+    function showLogin() {
+      document.querySelector("form").style.display = "block";
+      document.querySelector(".btn-google").style.display = "flex";
+      document.querySelector(".footer").style.display = "block";
+      document.getElementById("signup").style.display = "none";
+    }
+    function handleSignup(event) {
+      event.preventDefault();
+      const email = document.getElementById("newEmail").value;
+      const password = document.getElementById("newPassword").value;
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userPassword", password);
+      alert("Account created! Please log in.");
+      showLogin();
+    }
+    function handleLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const savedEmail = localStorage.getItem("userEmail");
+      const savedPassword = localStorage.getItem("userPassword");
+      if (email === savedEmail && password === savedPassword) {
+        localStorage.setItem("isLoggedIn", "true");
+        window.location.href = "dashboard.html";
+      } else {
+        alert("Invalid email or password!");
+      }
+    }
+    function googleLogin() {
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userEmail", "googleuser@gmail.com");
+      window.location.href = "dashboard.html";
+    }
+  </script>
+</body>
+</html>

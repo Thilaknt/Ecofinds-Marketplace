@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoFinds - Dashboard</title>
+<style>
+body {margin:0;font-family:Arial,sans-serif;display:flex;height:100vh;background:#f5f6f7;padding-top:80px;}
+.header{position:fixed;top:0;left:0;width:98%;height:80px;background:#59c873;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:1000;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.2);}
+.header .logo{font-size:2.2rem;font-weight:bold;letter-spacing:1px;color:#fafafa;}
+.header .search-bar{flex:1;margin:0 10px;display:flex;}
+.header .search-bar input{flex:1;padding:10px 12px;border:none;border-radius:4px 0 0 4px;font-size:1rem;}
+.header .search-bar button{padding:10px 12px;background:#ed8804;border:none;color:black;border-radius:0 4px 4px 0;cursor:pointer;}
+.header .user-links a{color:white;text-decoration:none;margin-left:10px;font-weight:bold;}
+.header .user-links a:hover{text-decoration:underline;}
+.sidebar{width:220px;background:#37475a;color:white;display:flex;flex-direction:column;padding:20px;}
+.sidebar h2{margin-bottom:20px;font-size:1.5rem;}
+.sidebar a{color:white;text-decoration:none;padding:10px;border-radius:6px;margin:5px 0;display:block;transition:0.3s;}
+.sidebar a:hover{background:#eef2f6;}
+.main{flex:1;padding:20px;overflow-y:auto;}
+.card{background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);margin-bottom:20px;}
+h2{color:#daa915;margin-bottom:15px;}
+button{padding:8px 12px;border:none;border-radius:6px;background:#ff9900;color:black;cursor:pointer;margin-top:5px;}
+button:hover{background:#f90;}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:20px;}
+.product{background:white;border-radius:10px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;transition:0.3s;}
+.product:hover{transform:translateY(-5px);box-shadow:0 6px 12px rgba(0,0,0,0.15);}
+.product img{width:100%;height:180px;object-fit:cover;border-radius:8px;margin-bottom:10px;}
+.product-info h4{font-size:1rem;margin:5px 0;height:40px;overflow:hidden;}
+.product-info p{font-size:0.9rem;margin:5px 0;color:#555;}
+.filters{margin-bottom:15px;display:flex;gap:10px;flex-wrap:wrap;}
+.filters input,.filters select{padding:8px;border:1px solid #ccc;border-radius:6px;font-size:1rem;}
+textarea{width:100%;padding:10px;border:1px solid #ccc;border-radius:6px;margin-top:5px;}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">🌍 EcoFinds</div>
+  <div class="search-bar">
+    <input type="text" id="topSearch" placeholder="Search products..." oninput="filterProducts()">
+    <button onclick="filterProducts()">Search</button>
+  </div>
+  <div class="user-links">
+    <a href="#" onclick="loadSection('dashboard')">Dashboard</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</header>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>Menu</h2>
+  <a href="#" onclick="loadSection('dashboard')">User Dashboard</a>
+  <a href="#" onclick="loadSection('products')">Available Products</a>
+  <a href="#" onclick="loadSection('sell')">Sell Item</a>
+  <a href="#" onclick="loadSection('myListings')">My Listings</a>
+  <a href="#" onclick="loadSection('cart')">Cart</a>
+  <a href="#" onclick="loadSection('history')">Purchase History</a>
+  <hr>
+  <a href="index.html">Home</a>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <div id="content" class="card">
+    <h2>Welcome to your Dashboard</h2>
+    <p id="userEmail"></p>
+    <p>Choose an option from the menu.</p>
+  </div>
+</div>
+
+<script>
+// Sample Products
+const catalog = JSON.parse(localStorage.getItem("catalog")) || [
+  { name: "Wooden Chair", price: 800, category: "Furniture", description:"Comfortable second-hand chair", img: "https://images.unsplash.com/photo-1616627985121-65f0100f2de2?w=400&h=300&fit=crop", owner: localStorage.getItem("userEmail") },
+  { name: "Used Books", price: 200, category: "Books", description:"Set of pre-owned books", img: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=300&fit=crop", owner: localStorage.getItem("userEmail") },
+  { name: "T-Shirt", price: 150, category: "Clothing", description:"Gently worn t-shirt", img: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=400&h=300&fit=crop", owner: localStorage.getItem("userEmail") },
+  { name: "Laptop Stand", price: 1200, category: "Electronics", description:"Adjustable laptop stand", img: "https://images.unsplash.com/photo-1593642532973-d31b6557fa68?w=400&h=300&fit=crop", owner: localStorage.getItem("userEmail") }
+];
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// Check login
+if(localStorage.getItem("isLoggedIn")!=="true"){ window.location.href="login.html"; }
+else { document.getElementById("userEmail").innerText = `👤 Logged in as: ${localStorage.getItem("userEmail")}`; }
+
+// Logout
+function logout(){ localStorage.clear(); window.location.href="login.html"; }
+
+// Load sections
+function loadSection(section){
+  const content=document.getElementById("content");
+
+  if(section==="dashboard"){
+    const username=localStorage.getItem("username")||"User";
+    content.innerHTML=`<h2>User Dashboard</h2>
+      <form onsubmit="saveProfile(event)">
+      <label>Username:</label>
+      <input type="text" id="editUsername" value="${username}" required><br><br>
+      <label>Email:</label>
+      <input type="email" id="editEmail" value="${localStorage.getItem("userEmail")}" required><br><br>
+      <button type="submit">Save Changes</button>
+      </form>`;
+  }
+
+  else if(section==="products"){
+    content.innerHTML=`<h2>Available Products</h2>
+      <div class="filters">
+        <input type="text" id="searchBox" placeholder="Search products..." oninput="filterProducts()">
+        <select id="categoryFilter" onchange="filterProducts()">
+          <option value="All">All Categories</option>
+          <option value="Furniture">Furniture</option>
+          <option value="Books">Books</option>
+          <option value="Clothing">Clothing</option>
+          <option value="Accessories">Accessories</option>
+          <option value="Electronics">Electronics</option>
+        </select>
+      </div>
+      <div id="productList" class="product-grid"></div>`;
+    renderProducts(catalog);
+  }
+
+  else if(section==="sell"){
+    content.innerHTML=`<h2>Sell an Item</h2>
+      <form onsubmit="sellItem(event)">
+        <input type="text" id="sellName" placeholder="Product Name" required><br><br>
+        <textarea id="sellDescription" placeholder="Product Description" required></textarea><br><br>
+        <input type="number" id="sellPrice" placeholder="Price (₹)" required><br><br>
+        <input type="url" id="sellImg" placeholder="Image URL" required><br><br>
+        <select id="sellCategory" required>
+          <option value="">Select Category</option>
+          <option value="Furniture">Furniture</option>
+          <option value="Books">Books</option>
+          <option value="Clothing">Clothing</option>
+          <option value="Accessories">Accessories</option>
+          <option value="Electronics">Electronics</option>
+        </select><br><br>
+        <button type="submit">Submit Listing</button>
+      </form>`;
+  }
+
+  else if(section==="myListings"){
+    const userEmail=localStorage.getItem("userEmail");
+    const myProducts=catalog.filter(p=>p.owner===userEmail);
+    let html=`<h2>My Listings</h2>`;
+    if(myProducts.length===0){ html+="<p>No products listed yet.</p>"; }
+    else{
+      html+=`<div class="product-grid">`;
+      myProducts.forEach((p,i)=>{
+        html+=`<div class="product">
+          <img src="${p.img}" alt="${p.name}">
+          <div class="product-info">
+            <h4>${p.name}</h4>
+            <p>₹${p.price}</p>
+            <p>${p.category}</p>
+            <p>${p.description}</p>
+            <button onclick="editListing(${i})">Edit</button>
+            <button onclick="deleteListing(${i})">Delete</button>
+          </div>
+        </div>`;
+      });
+      html+="</div>";
+    }
+    content.innerHTML=html;
+  }
+
+  else if(section==="cart"){
+    if(cart.length===0){ content.innerHTML=`<h2>Cart</h2><p>Your cart is empty 🛒</p>`; }
+    else{
+      let cartHTML="";
+      cart.forEach((item,i)=>{cartHTML+=`
+        <div class="product">
+          <img src="${item.img}" alt="${item.name}">
+          <div class="product-info">
+            <h4>${item.name}</h4>
+            <p>₹${item.price}</p>
+            <p>📂 ${item.category}</p>
+            <button onclick="removeFromCart(${i})">Remove</button>
+          </div>
+        </div>`;});
+      content.innerHTML=`<h2>Your Cart</h2>${cartHTML}<button onclick="checkout()">Checkout</button>`;
+    }
+  }
+
+  else if(section==="history"){
+    const history=JSON.parse(localStorage.getItem("history"))||[];
+    if(history.length===0){ content.innerHTML=`<h2>Purchase History</h2><p>No purchases yet 📜</p>`;}
+    else{
+      let historyHTML="";
+      history.forEach(item=>{historyHTML+=`
+        <div class="product">
+          <img src="${item.img}" alt="${item.name}">
+          <div class="product-info">
+            <h4>${item.name}</h4>
+            <p>₹${item.price}</p>
+            <p>✅ Purchased</p>
+          </div>
+        </div>`;});
+      content.innerHTML=`<h2>Purchase History</h2>${historyHTML}`;
+    }
+  }
+}
+
+// Render products
+function renderProducts(list){
+  const productList=document.getElementById("productList");
+  if(!productList) return;
+  let listHTML="";
+  list.forEach((p,index)=>{
+    listHTML+=`
+      <div class="product">
+        <img src="${p.img}" alt="${p.name}">
+        <div class="product-info">
+          <h4>${p.name}</h4>
+          <p>₹${p.price}</p>
+          <p>📂 ${p.category}</p>
+          <button onclick="addToCart(${index})">Add to Cart</button>
+        </div>
+      </div>`;
+  });
+  productList.innerHTML=listHTML||"<p>No products found.</p>";
+}
+
+// Filter
+function filterProducts(){
+  const searchValue=(document.getElementById("searchBox")?.value||document.getElementById("topSearch").value).toLowerCase();
+  const categoryValue=document.getElementById("categoryFilter")?.value||"All";
+  const filtered=catalog.filter(p=>{
+    const matchName=p.name.toLowerCase().includes(searchValue);
+    const matchCategory=categoryValue==="All"||p.category===categoryValue;
+    return matchName && matchCategory;
+  });
+  renderProducts(filtered);
+}
+
+// Cart functions
+function addToCart(index){ cart.push(catalog[index]); localStorage.setItem("cart",JSON.stringify(cart)); alert("Added to cart!"); loadSection("products"); }
+function removeFromCart(i){ cart.splice(i,1); localStorage.setItem("cart",JSON.stringify(cart)); loadSection('cart'); }
+function checkout(){ const history=JSON.parse(localStorage.getItem("history"))||[]; history.push(...cart); localStorage.setItem("history",JSON.stringify(history)); cart=[]; localStorage.removeItem("cart"); alert("Purchase successful! ✅"); loadSection("history"); }
+
+// Sell item
+function sellItem(event){ event.preventDefault();
+  const name=document.getElementById("sellName").value;
+  const description=document.getElementById("sellDescription").value;
+  const price=document.getElementById("sellPrice").value;
+  const img=document.getElementById("sellImg").value;
+  const category=document.getElementById("sellCategory").value;
+  const owner=localStorage.getItem("userEmail");
+  catalog.push({name,description,price,img,category,owner});
+  localStorage.setItem("catalog",JSON.stringify(catalog));
+  alert("Item listed successfully!");
+  loadSection("products");
+}
+
+// Edit/Delete Listing
+function editListing(index){
+  const product=catalog[index];
+  const newName=prompt("Edit Product Name:", product.name);
+  const newDescription=prompt("Edit Description:", product.description);
+  const newPrice=prompt("Edit Price:", product.price);
+  if(newName && newDescription && newPrice){
+    product.name=newName; product.description=newDescription; product.price=newPrice;
+    localStorage.setItem("catalog",JSON.stringify(catalog));
+    loadSection("myListings");
+  }
+}
+function deleteListing(index){ if(confirm("Delete this product?")){ catalog.splice(index,1); localStorage.setItem("catalog",JSON.stringify(catalog)); loadSection("myListings"); } }
+
+// Save profile
+function saveProfile(event){ event.preventDefault();
+  const newUsername=document.getElementById("editUsername").value;
+  const newEmail=document.getElementById("editEmail").value;
+  localStorage.setItem("username",newUsername);
+  localStorage.setItem("userEmail",newEmail);
+  alert("Profile updated!");
+  loadSection("dashboard");
+}
+
+// Load initial
+loadSection("dashboard");
+</script>
+
+</body>
+</html>
